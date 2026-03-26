@@ -280,7 +280,7 @@ NEGATIVE_WORDS = {
     "exploit", "exploited", "exploitation", "exploitative",
     "fuck", "fucking", "fucked", "fucker", "fucks", "fck", "fuk", "fuq",
     "motherfucker", "motherfucking", "motherfuckers", "mf", "mofo",
-    "wtf", "stfu", "lmfao", "Sex","Sexy"
+    "wtf", "stfu", "lmfao", "Sex","Sexy",
 
     # === VIOLENCE & THREATS ===
     "kill", "killed", "killer", "killers", "killing", "killings",
