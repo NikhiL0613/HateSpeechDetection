@@ -1,4 +1,4 @@
-# 🛡️ HateGuard — Real-Time Hate Speech Detection System
+# 🛡️ Hate Speech Detection — Real-Time Hate Speech Detection System
 
 An end-to-end NLP system for real-time hate speech detection with **95% accuracy**, built with Python, scikit-learn, NLTK, Flask/FastAPI, React.js, and Chart.js.
 
