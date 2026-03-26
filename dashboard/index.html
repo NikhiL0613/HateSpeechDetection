@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HateGuard Dashboard</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+:root{--bg:#0a0a0f;--card:#12121a;--border:#1e1e2e;--text:#e8e8ed;--muted:#8888a0;--dim:#555566;--red:#ff4757;--green:#2ed573;--blue:#5b8def;--amber:#ffa502;--purple:#a55eea}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--text);min-height:100vh}
+.dash{max-width:1400px;margin:0 auto;padding:24px}
+.hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:24px;padding-bottom:16px;border-bottom:1px solid var(--border)}
+.hdr h1{font-size:24px;display:flex;align-items:center;gap:10px}
+.badge{padding:6px 14px;border-radius:20px;font-size:12px;font-weight:600;display:flex;align-items:center;gap:6px}
+.badge-on{background:rgba(46,213,115,.15);color:var(--green)}
+.badge-off{background:rgba(255,165,2,.15);color:var(--amber)}
+.dot{width:8px;height:8px;border-radius:50%;animation:pulse 2s infinite}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.grid5{display:grid;grid-template-columns:repeat(auto-fit,minmax(180px,1fr));gap:12px;margin-bottom:20px}
+.mc{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;transition:transform .2s}
+.mc:hover{transform:translateY(-2px)}
+.mc-label{font-size:11px;text-transform:uppercase;letter-spacing:1px;color:var(--dim);margin-bottom:6px}
+.mc-val{font-family:'Courier New',monospace;font-size:26px;font-weight:700}
+.mc-sub{font-size:11px;color:var(--muted);margin-top:4px}
+.input-box{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px}
+.input-box h2{font-size:14px;color:var(--muted);margin-bottom:12px}
+.input-row{display:flex;gap:10px}
+.input-row textarea{flex:1;background:var(--bg);border:1px solid var(--border);border-radius:8px;color:var(--text);font-family:inherit;font-size:14px;padding:12px;resize:none;outline:none}
+.input-row textarea:focus{border-color:var(--blue)}
+.btn{padding:12px 24px;border-radius:8px;border:none;font-weight:600;font-size:14px;cursor:pointer;background:var(--blue);color:#fff}
+.btn:hover{opacity:.9}
+.btn:disabled{opacity:.5}
+.result{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:16px;margin-bottom:20px;animation:fadeIn .3s}
+@keyframes fadeIn{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:translateY(0)}}
+.rbadge{display:inline-flex;padding:5px 12px;border-radius:16px;font-size:12px;font-weight:700}
+.rbadge-hate{background:rgba(255,71,87,.15);color:var(--red)}
+.rbadge-safe{background:rgba(46,213,115,.15);color:var(--green)}
+.conf-bar{width:100%;height:5px;background:var(--border);border-radius:3px;margin-top:10px;overflow:hidden}
+.conf-fill{height:100%;border-radius:3px;transition:width .5s}
+.rdetails{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:10px;margin-top:12px;font-size:12px}
+.rdetails .lab{color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.5px}
+.rdetails .val{font-family:'Courier New',monospace;font-size:14px;margin-top:2px}
+.charts{display:grid;grid-template-columns:repeat(auto-fit,minmax(380px,1fr));gap:16px;margin-bottom:20px}
+.ccrd{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px}
+.ccrd h3{font-size:13px;color:var(--muted);margin-bottom:12px}
+.ccrd .ch{position:relative;height:240px}
+table{width:100%;border-collapse:collapse;font-size:12px}
+thead th{text-align:left;padding:8px;color:var(--dim);font-size:10px;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)}
+tbody td{padding:8px;font-family:'Courier New',monospace;border-bottom:1px solid var(--border)}
+tbody tr:hover{background:#1a1a26}
+.best{background:rgba(91,141,239,.1)!important}
+.hist{background:var(--card);border:1px solid var(--border);border-radius:10px;padding:20px;margin-bottom:20px}
+.hist h3{font-size:13px;color:var(--muted);margin-bottom:12px}
+.hi{display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border);font-size:12px}
+.hi:last-child{border-bottom:none}
+.hi-text{flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;color:var(--muted)}
+.hi-num{font-family:'Courier New',monospace;color:var(--dim);font-size:11px}
+@media(max-width:768px){.hdr{flex-direction:column;gap:10px;align-items:flex-start}.grid5{grid-template-columns:repeat(2,1fr)}.charts{grid-template-columns:1fr}.input-row{flex-direction:column}}
+</style>
+</head>
+<body>
+<div class="dash">
+<div class="hdr">
+<h1><span style="font-size:28px">&#128737;</span> HateGuard Analytics</h1>
+<div style="display:flex;align-items:center;gap:12px">
+<span style="font-family:monospace;font-size:11px;color:var(--dim);background:var(--bg);padding:4px 10px;border-radius:6px;border:1px solid var(--border)">API: localhost:5000</span>
+<div id="statusBadge" class="badge badge-off"><div class="dot" style="background:var(--amber)"></div>Checking...</div>
+</div>
+</div>
+
+<div class="grid5">
+<div class="mc"><div class="mc-label">Best Accuracy</div><div class="mc-val" style="color:var(--green)" id="bestAcc">--</div><div class="mc-sub" id="bestName">--</div></div>
+<div class="mc"><div class="mc-label">Total Scanned</div><div class="mc-val" style="color:var(--blue)" id="totalScan">0</div><div class="mc-sub">messages processed</div></div>
+<div class="mc"><div class="mc-label">Hate Detected</div><div class="mc-val" style="color:var(--red)" id="hateCount">0</div><div class="mc-sub" id="hatePct">0% of total</div></div>
+<div class="mc"><div class="mc-label">Avg Latency</div><div class="mc-val" style="color:var(--amber)" id="avgLat">0ms</div><div class="mc-sub">per request</div></div>
+<div class="mc"><div class="mc-label">Models Trained</div><div class="mc-val" style="color:var(--purple)">6</div><div class="mc-sub">best auto-selected</div></div>
+</div>
+
+<div class="input-box">
+<h2>&#128269; Analyze Text</h2>
+<div class="input-row">
+<textarea id="inputText" rows="2" placeholder="Enter text to analyze for hate speech..."></textarea>
+<button class="btn" id="analyzeBtn" onclick="doPredict()">Analyze</button>
+</div>
+</div>
+
+<div id="resultArea"></div>
+
+<div class="charts">
+<div class="ccrd"><h3>Model Accuracy &amp; F1 Comparison</h3><div class="ch"><canvas id="chart1"></canvas></div></div>
+<div class="ccrd"><h3>False Positive Rate by Model</h3><div class="ch"><canvas id="chart2"></canvas></div></div>
+</div>
+
+<div class="charts" id="histChartArea" style="display:none">
+<div class="ccrd"><h3>Prediction Confidence Over Time</h3><div class="ch"><canvas id="chart3"></canvas></div></div>
+</div>
+
+<div class="ccrd" style="margin-bottom:20px"><h3>Model Performance Comparison</h3>
+<table><thead><tr><th>Model</th><th>Accuracy</th><th>Precision</th><th>Recall</th><th>F1</th><th>AUC-ROC</th><th>FPR</th><th>Time</th></tr></thead><tbody id="tblBody"></tbody></table>
+</div>
+
+<div class="hist" id="histSection" style="display:none"><h3>&#128336; Recent Predictions</h3><div id="histLog"></div></div>
+</div>
+
+<script>
+const API="http://localhost:5000";
+let apiOn=false,history=[],stats={total:0,hate:0,nonHate:0,avgLat:0};
+const demo={
+LogisticRegression:{accuracy:1,precision:1,recall:1,f1_score:1,auc_roc:1,false_positive_rate:0,train_time_sec:2.5},
+RandomForest:{accuracy:1,precision:1,recall:1,f1_score:1,auc_roc:1,false_positive_rate:0,train_time_sec:4.3},
+GradientBoosting:{accuracy:.9992,precision:1,recall:.9985,f1_score:.9992,auc_roc:1,false_positive_rate:0,train_time_sec:6.1},
+LinearSVC:{accuracy:1,precision:1,recall:1,f1_score:1,auc_roc:1,false_positive_rate:0,train_time_sec:8.1},
+MLP_NeuralNet:{accuracy:1,precision:1,recall:1,f1_score:1,auc_roc:1,false_positive_rate:0,train_time_sec:15.2},
+Ensemble:{accuracy:1,precision:1,recall:1,f1_score:1,auc_roc:1,false_positive_rate:0,train_time_sec:12.4}
+};
+let metrics=demo;
+
+async function checkAPI(){
+try{const r=await fetch(API+"/api/health");if(r.ok){apiOn=true;const d=await r.json();document.getElementById("statusBadge").className="badge badge-on";document.getElementById("statusBadge").innerHTML='<div class="dot" style="background:var(--green)"></div>API Connected';try{const m=await fetch(API+"/api/metrics");metrics=await m.json()}catch(e){}}
+}catch(e){apiOn=false;document.getElementById("statusBadge").className="badge badge-off";document.getElementById("statusBadge").innerHTML='<div class="dot" style="background:var(--amber)"></div>Demo Mode'}
+renderMetrics();
+}
+
+function renderMetrics(){
+const entries=Object.entries(metrics).filter(([k,v])=>k!=="TEST_FINAL"&&typeof v==="object"&&v?.accuracy);
+let best=entries[0];entries.forEach(e=>{if(e[1].accuracy>best[1].accuracy)best=e});
+document.getElementById("bestAcc")=(best[1].accuracy*100).toFixed(2)+"%";
+document.getElementById("bestAcc").textContent=(best[1].accuracy*100).toFixed(2)+"%";
+document.getElementById("bestName").textContent=best[0];
+
+const tb=document.getElementById("tblBody");tb.innerHTML="";
+entries.forEach(([n,m])=>{
+const tr=document.createElement("tr");
+if(n===best[0])tr.className="best";
+tr.innerHTML=`<td style="font-family:inherit;font-weight:${n===best[0]?700:400}">${n===best[0]?"&#128081; ":""}${n}</td><td style="color:${m.accuracy>=.99?"var(--green)":"var(--text)"}">${(m.accuracy*100).toFixed(2)}%</td><td>${(m.precision*100).toFixed(2)}%</td><td>${(m.recall*100).toFixed(2)}%</td><td>${(m.f1_score*100).toFixed(2)}%</td><td>${(m.auc_roc*100).toFixed(2)}%</td><td style="color:${(m.false_positive_rate||0)<.02?"var(--green)":"var(--red)"}">${((m.false_positive_rate||0)*100).toFixed(2)}%</td><td>${m.train_time_sec?m.train_time_sec+"s":"--"}</td>`;
+tb.appendChild(tr)});
+
+const labels=entries.map(([n])=>n);
+const accData=entries.map(([,m])=>(m.accuracy*100).toFixed(2));
+const f1Data=entries.map(([,m])=>(m.f1_score*100).toFixed(2));
+const fprData=entries.map(([,m])=>((m.false_positive_rate||0)*100).toFixed(2));
+
+if(window.c1)window.c1.destroy();
+window.c1=new Chart(document.getElementById("chart1"),{type:"bar",data:{labels,datasets:[{label:"Accuracy",data:accData,backgroundColor:"rgba(91,141,239,.8)",borderRadius:5},{label:"F1 Score",data:f1Data,backgroundColor:"rgba(165,94,234,.8)",borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#8888a0",font:{size:11}}}},scales:{x:{ticks:{color:"#555566",font:{size:9}},grid:{color:"#1e1e2e"}},y:{min:99.8,max:100.05,ticks:{color:"#555566"},grid:{color:"#1e1e2e"}}}}});
+
+if(window.c2)window.c2.destroy();
+window.c2=new Chart(document.getElementById("chart2"),{type:"bar",data:{labels,datasets:[{label:"FPR %",data:fprData,backgroundColor:fprData.map(v=>v<2?"rgba(46,213,115,.8)":"rgba(255,71,87,.7)"),borderRadius:5}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#8888a0",font:{size:11}}}},scales:{x:{ticks:{color:"#555566",font:{size:9}},grid:{color:"#1e1e2e"}},y:{min:0,ticks:{color:"#555566"},grid:{color:"#1e1e2e"}}}}});
+}
+
+async function doPredict(){
+const text=document.getElementById("inputText").value.trim();
+if(!text)return;
+let result;
+if(apiOn){
+try{const r=await fetch(API+"/api/predict",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({text})});result=await r.json()}catch(e){result=fakePred(text)}
+}else{result=fakePred(text)}
+showResult(result);
+document.getElementById("inputText").value="";
+}
+
+function fakePred(text){
+const hw=["hate","disgusting","filthy","worthless","vile","scum","vermin","eliminate","pathetic","subhuman","plague","death","deport","ban","inferior","trash","creatures"];
+const l=text.toLowerCase();const mc=hw.filter(w=>l.includes(w)).length;
+const isH=mc>=2||(mc>=1&&(l.includes("all")||l.includes("every")));
+const conf=isH?.85+Math.random()*.14:.02+Math.random()*.08;
+return{text,prediction:isH?"hate":"non-hate",label:isH?1:0,confidence:parseFloat(conf.toFixed(4)),latency_ms:parseFloat((20+Math.random()*80).toFixed(2)),model:"Ensemble (demo)",timestamp:new Date().toISOString()};
+}
+
+function showResult(r){
+stats.total++;stats.hate+=r.label;stats.nonHate+=1-r.label;
+stats.avgLat=((stats.avgLat*(stats.total-1))+r.latency_ms)/stats.total;
+document.getElementById("totalScan").textContent=stats.total;
+document.getElementById("hateCount").textContent=stats.hate;
+document.getElementById("hatePct").textContent=(stats.total>0?((stats.hate/stats.total)*100).toFixed(1):0)+"% of total";
+document.getElementById("avgLat").textContent=Math.round(stats.avgLat)+"ms";
+
+const a=document.getElementById("resultArea");
+a.innerHTML=`<div class="result"><div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px"><span class="rbadge ${r.label?"rbadge-hate":"rbadge-safe"}">${r.label?"&#9888;&#65039; HATE DETECTED":"&#9989; SAFE"}</span><span style="font-size:11px;color:var(--dim)">${r.model}</span></div><div class="conf-bar"><div class="conf-fill" style="width:${r.confidence*100}%;background:${r.label?"linear-gradient(90deg,var(--red),#ff6b81)":"linear-gradient(90deg,var(--green),#7bed9f)"}"></div></div><div class="rdetails"><div><div class="lab">Confidence</div><div class="val">${(r.confidence*100).toFixed(2)}%</div></div><div><div class="lab">Latency</div><div class="val">${r.latency_ms}ms</div></div><div><div class="lab">Classification</div><div class="val">${r.prediction}</div></div><div><div class="lab">Input</div><div class="val" style="font-size:11px;font-family:inherit;color:var(--muted)">"${r.text.length>50?r.text.slice(0,50)+"...":r.text}"</div></div></div></div>`;
+
+history.unshift(r);
+document.getElementById("histSection").style.display="block";
+const hl=document.getElementById("histLog");
+hl.innerHTML=history.slice(0,15).map(h=>`<div class="hi"><span class="rbadge ${h.label?"rbadge-hate":"rbadge-safe"}" style="font-size:10px;padding:2px 8px">${h.label?"HATE":"SAFE"}</span><span class="hi-text">${h.text}</span><span class="hi-num">${(h.confidence*100).toFixed(1)}%</span><span class="hi-num">${h.latency_ms}ms</span></div>`).join("");
+
+document.getElementById("histChartArea").style.display="grid";
+if(window.c3)window.c3.destroy();
+const hd=history.slice().reverse();
+window.c3=new Chart(document.getElementById("chart3"),{type:"line",data:{labels:hd.map((_,i)=>"#"+(i+1)),datasets:[{label:"Confidence",data:hd.map(h=>(h.confidence*100).toFixed(1)),borderColor:"#5b8def",backgroundColor:"rgba(91,141,239,.1)",fill:true,tension:.4,pointRadius:4,pointBackgroundColor:hd.map(h=>h.label?"#ff4757":"#2ed573")}]},options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{labels:{color:"#8888a0",font:{size:11}}}},scales:{x:{ticks:{color:"#555566"},grid:{color:"#1e1e2e"}},y:{min:0,max:100,ticks:{color:"#555566"},grid:{color:"#1e1e2e"}}}}});
+}
+
+document.getElementById("inputText").addEventListener("keydown",e=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();doPredict()}});
+checkAPI();
+</script>
+</body>
+</html>

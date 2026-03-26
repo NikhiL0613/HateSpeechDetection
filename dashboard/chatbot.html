@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anonymous Chatbot - Hate Detection</title>
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:system-ui,-apple-system,sans-serif;background:#0a0a0f;color:#e8e8ed;height:100vh;display:flex;flex-direction:column}
+.header{background:#12121a;border-bottom:1px solid #1e1e2e;padding:16px 24px;display:flex;align-items:center;justify-content:space-between}
+.header h1{font-size:18px;display:flex;align-items:center;gap:8px}
+.header .status{font-size:12px;padding:4px 12px;border-radius:12px;background:rgba(46,213,115,.15);color:#2ed573}
+.stats-bar{background:#12121a;border-bottom:1px solid #1e1e2e;padding:10px 24px;display:flex;gap:24px;font-size:12px;color:#8888a0}
+.stats-bar span{display:flex;align-items:center;gap:6px}
+.stats-bar .num{color:#e8e8ed;font-weight:600;font-family:'Courier New',monospace}
+.chat-area{flex:1;overflow-y:auto;padding:20px 24px;display:flex;flex-direction:column;gap:8px}
+.msg{max-width:75%;padding:10px 14px;border-radius:12px;font-size:14px;line-height:1.5;animation:fadeIn .3s;position:relative}
+@keyframes fadeIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:translateY(0)}}
+.msg-user{align-self:flex-end;background:#2a3a5c;border-bottom-right-radius:4px}
+.msg-bot{align-self:flex-start;background:#1a1a26;border:1px solid #1e1e2e;border-bottom-left-radius:4px}
+.msg-system{align-self:center;background:transparent;color:#555566;font-size:12px;padding:4px}
+.msg-blocked{align-self:flex-end;background:rgba(255,71,87,.15);border:1px solid rgba(255,71,87,.3);border-bottom-right-radius:4px}
+.msg-blocked .blocked-label{color:#ff4757;font-size:11px;font-weight:600;display:flex;align-items:center;gap:4px;margin-bottom:4px}
+.msg-blocked .original{color:#8888a0;text-decoration:line-through;font-size:13px}
+.msg-safe-label{font-size:10px;color:#2ed573;margin-top:4px;display:flex;align-items:center;gap:4px}
+.msg-meta{font-size:10px;color:#555566;margin-top:4px;text-align:right}
+.input-area{background:#12121a;border-top:1px solid #1e1e2e;padding:16px 24px;display:flex;gap:10px}
+.input-area input{flex:1;background:#0a0a0f;border:1px solid #1e1e2e;border-radius:20px;color:#e8e8ed;font-size:14px;padding:10px 18px;outline:none;font-family:inherit}
+.input-area input:focus{border-color:#5b8def}
+.input-area input::placeholder{color:#555566}
+.send-btn{background:#5b8def;border:none;border-radius:20px;color:#fff;font-size:14px;padding:10px 20px;cursor:pointer;font-weight:600}
+.send-btn:hover{background:#4a7de0}
+.send-btn:disabled{opacity:.4;cursor:not-allowed}
+.typing{align-self:flex-start;padding:8px 14px;color:#555566;font-size:13px}
+.typing span{animation:blink 1.4s infinite both}
+.typing span:nth-child(2){animation-delay:.2s}
+.typing span:nth-child(3){animation-delay:.4s}
+@keyframes blink{0%,80%,100%{opacity:0}40%{opacity:1}}
+.welcome{text-align:center;padding:40px 20px;color:#555566}
+.welcome h2{color:#8888a0;font-size:20px;margin-bottom:8px}
+.welcome p{font-size:14px;line-height:1.6;max-width:500px;margin:0 auto}
+.rules{margin-top:16px;display:flex;gap:12px;justify-content:center;flex-wrap:wrap}
+.rules span{background:#1a1a26;border:1px solid #1e1e2e;padding:6px 14px;border-radius:8px;font-size:12px}
+</style>
+</head>
+<body>
+
+<div class="header">
+<h1>&#128737; Anonymous Chat</h1>
+<div class="status" id="status">Connecting...</div>
+</div>
+
+<div class="stats-bar">
+<span>Messages: <span class="num" id="msgCount">0</span></span>
+<span>Blocked: <span class="num" id="blockCount" style="color:#ff4757">0</span></span>
+<span>Safe: <span class="num" id="safeCount" style="color:#2ed573">0</span></span>
+<span>Block Rate: <span class="num" id="blockRate">0%</span></span>
+<span>Avg Latency: <span class="num" id="latency">0ms</span></span>
+</div>
+
+<div class="chat-area" id="chatArea">
+<div class="welcome">
+<h2>&#128075; Welcome to Anonymous Chat</h2>
+<p>This is a safe space. All messages are automatically scanned by our AI hate detection system. Hateful or offensive messages will be blocked in real-time.</p>
+<div class="rules">
+<span>&#9989; Be respectful</span>
+<span>&#9989; Be kind</span>
+<span>&#128683; No hate speech</span>
+<span>&#128683; No harassment</span>
+</div>
+</div>
+</div>
+
+<div class="input-area">
+<input type="text" id="msgInput" placeholder="Type a message..." autocomplete="off" />
+<button class="send-btn" id="sendBtn" onclick="sendMessage()">Send</button>
+</div>
+
+<script>
+const API = "http://localhost:5000";
+let stats = { total: 0, blocked: 0, safe: 0, latencies: [] };
+let apiOnline = false;
+
+const chatArea = document.getElementById("chatArea");
+const msgInput = document.getElementById("msgInput");
+
+const botResponses = {
+    safe: [
+        "That's great to hear! &#128522;",
+        "Thanks for sharing! How's your day going?",
+        "Nice! Tell me more about that.",
+        "That sounds wonderful! &#128516;",
+        "Awesome! What else is on your mind?",
+        "I appreciate you sharing that! &#128153;",
+        "That's really cool! Keep it up!",
+        "Sounds like a good time! &#128578;",
+        "Love the positivity! &#127775;",
+        "That made me smile! Thanks! &#128522;",
+    ],
+    blocked: [
+        "I noticed some concerning language. Let's keep things friendly! &#128522;",
+        "Hey, let's be kind to each other. Try rephrasing that! &#128153;",
+        "That message was flagged. Remember, everyone deserves respect!",
+        "Let's keep this a safe space for everyone! &#127775;",
+        "I blocked that message. Want to try saying it differently?",
+    ]
+};
+
+async function checkAPI() {
+    try {
+        const r = await fetch(API + "/api/health");
+        if (r.ok) {
+            apiOnline = true;
+            document.getElementById("status").textContent = "AI Protected";
+            document.getElementById("status").style.background = "rgba(46,213,115,.15)";
+            document.getElementById("status").style.color = "#2ed573";
+        }
+    } catch(e) {
+        apiOnline = false;
+        document.getElementById("status").textContent = "Demo Mode";
+        document.getElementById("status").style.background = "rgba(255,165,2,.15)";
+        document.getElementById("status").style.color = "#ffa502";
+    }
+}
+
+function addMessage(text, type, meta = {}) {
+    const div = document.createElement("div");
+    div.className = "msg " + type;
+
+    if (type === "msg-blocked") {
+        div.innerHTML = `<div class="blocked-label">&#9888;&#65039; Message blocked by AI</div><div class="original">${escapeHtml(text)}</div><div class="msg-meta">Confidence: ${meta.confidence || '?'}% | ${meta.latency || '?'}ms</div>`;
+    } else if (type === "msg-user") {
+        div.innerHTML = `${escapeHtml(text)}<div class="msg-safe-label">&#9989; Safe (${meta.confidence || '?'}%)</div><div class="msg-meta">${meta.latency || '?'}ms</div>`;
+    } else {
+        div.innerHTML = text;
+    }
+
+    chatArea.appendChild(div);
+    chatArea.scrollTop = chatArea.scrollHeight;
+}
+
+function escapeHtml(text) {
+    const div = document.createElement("div");
+    div.textContent = text;
+    return div.innerHTML;
+}
+
+function updateStats() {
+    document.getElementById("msgCount").textContent = stats.total;
+    document.getElementById("blockCount").textContent = stats.blocked;
+    document.getElementById("safeCount").textContent = stats.safe;
+    document.getElementById("blockRate").textContent = stats.total > 0
+        ? Math.round((stats.blocked / stats.total) * 100) + "%" : "0%";
+    document.getElementById("latency").textContent = stats.latencies.length > 0
+        ? Math.round(stats.latencies.reduce((a,b) => a+b, 0) / stats.latencies.length) + "ms" : "0ms";
+}
+
+async function sendMessage() {
+    const text = msgInput.value.trim();
+    if (!text) return;
+    msgInput.value = "";
+    stats.total++;
+
+    let result;
+    if (apiOnline) {
+        try {
+            const r = await fetch(API + "/api/predict", {
+                method: "POST",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ text })
+            });
+            result = await r.json();
+        } catch(e) {
+            result = demoPrediction(text);
+        }
+    } else {
+        result = demoPrediction(text);
+    }
+
+    stats.latencies.push(result.latency_ms);
+    const conf = (result.confidence * 100).toFixed(1);
+
+    if (result.label === 1) {
+        stats.blocked++;
+        addMessage(text, "msg-blocked", { confidence: conf, latency: result.latency_ms });
+        setTimeout(() => {
+            const resp = botResponses.blocked[Math.floor(Math.random() * botResponses.blocked.length)];
+            addMessage(resp, "msg-bot");
+        }, 500 + Math.random() * 500);
+    } else {
+        stats.safe++;
+        addMessage(text, "msg-user", { confidence: (100 - result.confidence * 100).toFixed(1), latency: result.latency_ms });
+        setTimeout(() => {
+            const resp = botResponses.safe[Math.floor(Math.random() * botResponses.safe.length)];
+            addMessage(resp, "msg-bot");
+        }, 800 + Math.random() * 1000);
+    }
+    updateStats();
+}
+
+function demoPrediction(text) {
+    const hw = ["hate","kill","die","stupid","idiot","ugly","trash","fuck","shit","bitch","damn","ass","loser","disgusting","worthless","pathetic","destroy","attack","violent","racist"];
+    const l = text.toLowerCase();
+    const mc = hw.filter(w => l.includes(w)).length;
+    const isH = mc >= 1;
+    return { label: isH ? 1 : 0, confidence: isH ? 0.85 + Math.random()*.14 : 0.05 + Math.random()*.1, latency_ms: parseFloat((10+Math.random()*50).toFixed(2)) };
+}
+
+msgInput.addEventListener("keydown", e => {
+    if (e.key === "Enter") sendMessage();
+});
+
+checkAPI();
+addMessage("AI hate detection is active. All messages are monitored.", "msg-system");
+</script>
+</body>
+</html>

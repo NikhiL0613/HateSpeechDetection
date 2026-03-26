@@ -1,0 +1,13 @@
+venv/
+__pycache__/
+*.pyc
+*.pkl
+*.keras
+.vscode/
+data/processed/
+data/dataset.csv
+data/labeled_data.csv
+*.egg-info/
+dist/
+build/
+.env

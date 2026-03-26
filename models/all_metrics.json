@@ -1,0 +1,162 @@
+{
+  "LogisticRegression": {
+    "model": "LogisticRegression",
+    "accuracy": 0.9409,
+    "precision": 0.9495,
+    "recall": 0.9811,
+    "f1_score": 0.965,
+    "auc_roc": 0.9771,
+    "false_positive_rate": 0.2584,
+    "confusion_matrix": [
+      [
+        310,
+        108
+      ],
+      [
+        39,
+        2029
+      ]
+    ],
+    "train_time_sec": 0.73
+  },
+  "RandomForest": {
+    "model": "RandomForest",
+    "accuracy": 0.8399,
+    "precision": 0.8386,
+    "recall": 1.0,
+    "f1_score": 0.9122,
+    "auc_roc": 0.9676,
+    "false_positive_rate": 0.9522,
+    "confusion_matrix": [
+      [
+        20,
+        398
+      ],
+      [
+        0,
+        2068
+      ]
+    ],
+    "train_time_sec": 0.66
+  },
+  "GradientBoosting": {
+    "model": "GradientBoosting",
+    "accuracy": 0.9356,
+    "precision": 0.9565,
+    "recall": 0.9666,
+    "f1_score": 0.9615,
+    "auc_roc": 0.975,
+    "false_positive_rate": 0.2177,
+    "confusion_matrix": [
+      [
+        327,
+        91
+      ],
+      [
+        69,
+        1999
+      ]
+    ],
+    "train_time_sec": 13.01
+  },
+  "LinearSVC": {
+    "model": "LinearSVC",
+    "accuracy": 0.9465,
+    "precision": 0.9631,
+    "recall": 0.9729,
+    "f1_score": 0.968,
+    "auc_roc": 0.976,
+    "false_positive_rate": 0.1842,
+    "confusion_matrix": [
+      [
+        341,
+        77
+      ],
+      [
+        56,
+        2012
+      ]
+    ],
+    "train_time_sec": 0.63
+  },
+  "MLP_NeuralNet": {
+    "model": "MLP_NeuralNet",
+    "accuracy": 0.9288,
+    "precision": 0.9466,
+    "recall": 0.9691,
+    "f1_score": 0.9577,
+    "auc_roc": 0.96,
+    "false_positive_rate": 0.2703,
+    "confusion_matrix": [
+      [
+        305,
+        113
+      ],
+      [
+        64,
+        2004
+      ]
+    ],
+    "train_time_sec": 15.63
+  },
+  "Ensemble": {
+    "model": "Ensemble",
+    "accuracy": 0.9481,
+    "precision": 0.9623,
+    "recall": 0.9758,
+    "f1_score": 0.969,
+    "auc_roc": 0.9798,
+    "false_positive_rate": 0.189,
+    "confusion_matrix": [
+      [
+        339,
+        79
+      ],
+      [
+        50,
+        2018
+      ]
+    ]
+  },
+  "TEST_FINAL": {
+    "model": "Ensemble [TEST]",
+    "accuracy": 0.9513,
+    "precision": 0.9649,
+    "recall": 0.9771,
+    "f1_score": 0.9709,
+    "auc_roc": 0.9859,
+    "false_positive_rate": 0.1763,
+    "confusion_matrix": [
+      [
+        514,
+        110
+      ],
+      [
+        71,
+        3023
+      ]
+    ]
+  },
+  "DeepNeuralNet": {
+    "model": "DeepNeuralNet",
+    "accuracy": 0.9368,
+    "precision": 0.958,
+    "recall": 0.9664,
+    "f1_score": 0.9622,
+    "auc_roc": 0.9685,
+    "false_positive_rate": 0.2099,
+    "confusion_matrix": [
+      [
+        493,
+        131
+      ],
+      [
+        104,
+        2990
+      ]
+    ],
+    "train_time_sec": 432.74,
+    "architecture": "512-256-128-64-32",
+    "iterations": 15
+  }
+}
